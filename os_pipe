@@ -1,0 +1,228 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <signal.h>
+#include <time.h>   
+#define BUF_SIZE 256
+
+main()
+{
+	clock_t start_t, end_t, total_t;	
+    	
+	int p1[2],p2[2],i,j,k;
+	
+	ssize_t numRead = -1;
+	
+	const char* messageOne = "HELLO WORLD";
+    	const char messageTwo[15];
+	
+	const unsigned int commLen = strlen(messageOne) + 1;
+	
+	char buf[BUF_SIZE];
+	
+	pipe(p1);
+	if (pipe(p1) == -1)
+    	{
+        	printf("\n Error opening pipe A->B!\n");
+        	exit(1);
+    	}
+    	
+	pipe(p2);
+	if (pipe(p2) == -1)
+    	{
+        	printf("\n Error opening pipe B->A!\n");
+        	exit(1);
+    	}
+	
+	
+	
+	printf("\n Piped opened with success. Forking ...\n");
+	
+	start_t = clock();
+	
+	switch (fork())
+   	{
+        	case -1:
+        		printf("\n Error forking child A!\n");
+            		exit(1);
+	
+		case 0:
+            		printf("\nChild A executing...\n");
+            		
+            		sleep(1);
+            		
+            		/* close reading end of first pipe */
+            		if (close(p1[0]) == -1)
+            		{
+                		printf("\n Error closing reading end of pipe 1.\n");
+                		_exit(1);
+            		}
+            		/* close writing end of second pipe */
+            		if (close(p2[1]) == -1)
+            		{
+                		printf("\n Error closing writing end of pipe 2.\n");
+               	 		_exit(1);
+            		}
+
+            		/* write to pipe 1 */
+            		if (write(p1[1], messageOne, commLen) != commLen)
+            		{
+                		printf("\n Error writing to pipe 1.\n");
+               	 		_exit(1);
+            		}
+            		if (close(p1[1]) == -1)
+            		{
+                		printf("\n Error closing writing end of pipe 1.\n");
+                		_exit(1);
+            		}
+
+            		/* reding from pipe 2 */
+            		numRead = read(p2[0], buf, 15);
+            		if (numRead == -1)
+            		{
+                		printf("\n Error reading from pipe 2.\n");
+                		_exit(1);
+            		}
+			i=atoi(buf);
+			if(i+1==commLen)
+				printf("\n OK\n ");
+			else
+				printf("Error");
+            		if (close(p2[0]) == -1)
+            		{
+		                printf("\nError closing reding end of pipe 2.\n");
+                		_exit(1);
+	            	}
+	           
+
+            		printf("\nMessage received child A: %s\n", buf);
+            		printf("\nExiting child A...\n");
+            		
+            		
+            		
+            		_exit(0);
+
+        		default:
+            			break;
+    	}
+
+	
+	// child B
+    	switch (fork())
+    	{
+        	case -1:
+            		printf("\nError forking child B!\n");
+            		exit(1);
+        	case 0:
+            		printf("\nChild B executing...\n");
+            		
+            		sleep(1);
+            		
+            		/* close reading end of second pipe */
+            		if (close(p2[0]) == -1)
+            		{
+                		printf("\nError closing reading end of pipe 2.\n");
+                		_exit(1);
+            		}
+            		/* close writing end of first pipe */
+            		if (close(p1[1]) == -1)
+            		{
+                		printf("\nError closing writing end of pipe 1.\n");
+                		_exit(1);
+            		}
+
+            		/* read from the first pipe */
+            		if (read(p1[0], buf, commLen) == -1)
+            		{
+                		printf("\nError reading from pipe 1.\n");
+                		_exit(EXIT_FAILURE);
+            		}
+
+            		if (close(p1[0]) == -1)
+            		{
+                		printf("\nError closing reading end of pipe 1.\n");
+                		_exit(EXIT_FAILURE);
+            		}
+			j=strlen(buf);
+			sprintf(messageTwo,"%d",j);
+            		/* write to the second pipe */
+            		if (write(p2[1], messageTwo,15) != 15)
+            		{
+                		printf("\nError writing to the pipe.\n");
+                		_exit(EXIT_FAILURE);
+            		}
+
+            		if (close(p2[1]) == -1)
+            		{
+                		printf("\nError closing writing end of pipe 2.\n");
+                		_exit(EXIT_FAILURE);
+            		}
+
+            		printf("\nMessage received child B: %s\n", buf);
+            		
+            		
+            		
+            		printf("\nExiting child B...\n");
+            		
+            		
+            		
+            		_exit(EXIT_SUCCESS);
+
+        	default:
+            		break;
+    	}
+	
+	printf("\nParent closing pipes.\n");
+	
+	sleep(1);
+     	
+    	if (close(p1[0]) == -1)
+    	{
+        	printf("\nError closing reading end of the pipe.\n");
+        	exit(EXIT_FAILURE);
+    	}
+
+    	if (close(p2[1]) == -1)
+    	{
+        	printf("\nError closing writing end of the pipe.\n");
+        	exit(EXIT_FAILURE);
+    	}
+
+    	if (close(p2[0]) == -1)
+    	{
+        	printf("\n Error closing reading end of the pipe.\n");
+        	exit(EXIT_FAILURE);
+    	}
+
+    	if (close(p1[1]) == -1)
+    	{
+        	printf("\n Error closing writing end of the pipe.\n");
+        	exit(EXIT_FAILURE);
+    	}
+
+    	printf("\n Parent waiting for children completion...\n");
+    	if (wait(NULL) == -1)
+    	{
+        	printf("\n Error waiting.\n");
+        	exit(EXIT_FAILURE);
+    	}
+    	if (wait(NULL) == -1)
+    	{
+        	printf("\n Error waiting.\n");
+        	exit(EXIT_FAILURE);
+    	}
+	
+    	printf("\n Parent finishing.\n");
+    	end_t = clock();
+	printf("\n end_t : %ld ",end_t);
+	total_t = (double)(end_t - start_t) / CLOCKS_PER_SEC;
+	printf ("CPU time : %lf\n", total_t );
+	
+	if(total_t>0.0000001)
+		kill(getpid(),SIGABRT);
+	
+	
+	exit(EXIT_SUCCESS);
+}

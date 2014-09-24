@@ -1,0 +1,22 @@
+Assignments/Projects: CS 3003 Operating systems  Monsoon Sem 2013  
+
+Each student should work independently on the projects.  The source codes with detailed documentation ( declaration level, statement level, function level, and overall ) and report of execution should be emailed to vkg@nitc.ac.in on or before the due date. The demo will be on the next day of due date of submission.
+
+A parent process will create two children processes A & B, and wait for the children to  get terminated when both the processes have done their duties. If  a child  does not get terminated within a pre-specified time inform failure of  that child and quit.
+
+The duty of  A is to create  a file with some  text, and send this to the Process B, and wait for an acknowledgement from Process B as the total number of characters received by B. Compare the total chars sent and received, and output the  result. It then quits.
+The duty of process B is to receive the file sent by A and sum the characters received and send it back to process A, and then quit. 
+Use pipes for communication. (Due date: Sept 30)
+
+
+2.	Study the process table data structures used by Linux OS. List the fields used with their  purposes. (due date: Oct 15)
+
+3.	Repeat  project 1 with  threads instead of processes A & B. Use a shared global byte variable for  communication between the threads. Ensure mutual exclusion before accessing  the shared variable.  Describe  a possible situation for deadlock in this problem. (Oct 30)
+
+
+Evaluation Process
+
+Proj1	Proj2	Proj3	Test1	Test2	Terminal exam	total
+4	2	4	20	20	50	100
+
+
